@@ -1,0 +1,15 @@
+PODS:
+  - GPUImage (0.1.7)
+  - MJRefresh (3.1.12)
+
+DEPENDENCIES:
+  - GPUImage
+  - MJRefresh
+
+SPEC CHECKSUMS:
+  GPUImage: 733a5f0fab92df9de1c37ba9df520a833ccb406d
+  MJRefresh: b96cdb21c4aa75a7b07654311ab2f315c497e806
+
+PODFILE CHECKSUM: 42cbe60b7d24570139e53cd7cd13a56142b7aeec
+
+COCOAPODS: 1.2.1
