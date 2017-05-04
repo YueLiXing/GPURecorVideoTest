@@ -22,7 +22,8 @@
 @property (nonatomic, retain) UIButton * recordButton;
 
 
-@property (nonatomic,strong) GPUImageCropFilter * cropfilter;
+//@property (nonatomic,strong) GPUImageCropFilter * cropfilter;
+@property (nonatomic,strong) GPUImageFilter * cropfilter;
 //@property (nonatomic,strong) GPUImageFilterGroup * filterGroup;
 @property (nonatomic,strong) GPUImageView * preImageView;
 @property (nonatomic,strong) GPUImageVideoCamera * videoCamera;
@@ -75,7 +76,8 @@
 
     self.isRecording = NO;
     
-    self.tempVideopath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"oring_movie.mp4"];;
+//    self.tempVideopath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"oring_movie.mp4"];
+    self.tempVideopath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"oring_movie.mov"];
     self.movieURL = [NSURL fileURLWithPath:self.tempVideopath];
     
     [self createView];
@@ -103,7 +105,6 @@
         NSLog(@"录制已结束");
         return;
     }
-    self.recordFinish = YES;
     
     
     [self.countTimer invalidate];
@@ -114,8 +115,13 @@
             
             NSLog(@"录制结束 %.2f", value);
             
-            self.movieWriter = nil;
+            AVURLAsset * asset = [AVURLAsset assetWithURL:[NSURL fileURLWithPath:self.tempVideopath]];
+            value = asset.duration.value*1.0/asset.duration.timescale;
+            NSLog(@"录制结束 asset.duration : %.2f", value);
             
+            self.recordFinish = YES;
+            
+            self.movieWriter = nil;
             self.movieWriter = [self getMovieWriter];
             
             [self.cropfilter addTarget:self.movieWriter];
@@ -126,7 +132,22 @@
 
 - (void)timerFly {
     CGFloat value = self.movieWriter.duration.value/(CGFloat)self.movieWriter.duration.timescale;
-    NSLog(@"%f", value);
+    NSString * temp = nil;
+    if (self.movieWriter.assetWriter.status == AVAssetWriterStatusUnknown) {
+        temp = @"Unknown";
+    } else if (self.movieWriter.assetWriter.status == AVAssetWriterStatusWriting) {
+        temp = @"Writing";
+    } else if (self.movieWriter.assetWriter.status == AVAssetWriterStatusCompleted) {
+        temp = @"Completed";
+    } else if (self.movieWriter.assetWriter.status == AVAssetWriterStatusFailed) {
+        temp = @"Failed";
+    } else {
+        temp = @"Cancelled";
+    }
+    
+    
+    NSLog(@"%f %@", value, temp);
+    
 //    self.progressView.currentValue = value;
     if (value >= self.maxDuration) {
         [self.countTimer invalidate];
@@ -158,6 +179,7 @@
     self.videoCamera.outputImageOrientation = UIInterfaceOrientationPortrait;
     self.videoCamera.horizontallyMirrorFrontFacingCamera = YES;
     self.videoCamera.horizontallyMirrorRearFacingCamera  = NO;
+//    self.videoCamera.runBenchmark = YES;
     
     CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(self.videoCamera.inputCamera.activeFormat.formatDescription);
     
@@ -172,11 +194,12 @@
     //    CGFloat top = (640-self.videoSize.height)/2.0/640.0;
     //    CGFloat width = self.videoSize.width/480.0;
     //    CGFloat height = self.videoSize.height/640.0;
-    CGFloat top = (originSize.height-originSize.width)/2.0/originSize.height;
-    CGFloat width = 1;
-    CGFloat height = originSize.width/originSize.height;
+//    CGFloat top = (originSize.height-originSize.width)/2.0/originSize.height;
+//    CGFloat width = 1;
+//    CGFloat height = originSize.width/originSize.height;
+//    self.cropfilter = [[GPUImageCropFilter alloc] initWithCropRegion:CGRectMake(0, top, width, height)];
     
-    self.cropfilter = [[GPUImageCropFilter alloc] initWithCropRegion:CGRectMake(0, top, width, height)];
+    self.cropfilter = [[GPUImageSepiaFilter alloc] init];
     
     [self.videoCamera addTarget:self.cropfilter];
     [self.cropfilter addTarget:self.preImageView];
@@ -281,7 +304,9 @@
 
 
 - (GPUImageMovieWriter *)getMovieWriter {
-    GPUImageMovieWriter * movieWriter = [[GPUImageMovieWriter alloc] initWithMovieURL:self.movieURL size:self.videoSize fileType:AVFileTypeMPEG4 outputSettings:nil];
+//    GPUImageMovieWriter * movieWriter = [[GPUImageMovieWriter alloc] initWithMovieURL:self.movieURL size:self.videoSize fileType:AVFileTypeMPEG4 outputSettings:nil];
+    GPUImageMovieWriter * movieWriter = [[GPUImageMovieWriter alloc] initWithMovieURL:self.movieURL size:self.videoSize fileType:AVFileTypeQuickTimeMovie outputSettings:nil];
+    
     
     movieWriter.delegate = self;
     [movieWriter enableSynchronizationCallbacks];
